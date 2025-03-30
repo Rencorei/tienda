@@ -7,7 +7,7 @@ class CajaRegistradoraView:
         self.controller = controller
         
         self.root.title("Caja Registradora - Versión 1.02")
-        self.root.geometry("850x600")
+        self.root.geometry("1000x600")
         self.root.resizable(False, False)
 
         # Paleta de colores
@@ -25,15 +25,18 @@ class CajaRegistradoraView:
         self.frame_menu = tk.Frame(self.root, bg=self.color_fondo)
         self.frame_ventas = tk.Frame(self.root, bg=self.color_fondo)
         self.frame_inventario = tk.Frame(self.root, bg=self.color_fondo)
+        self.frame_historial = tk.Frame(self.root, bg=self.color_fondo)
 
-        # Variable para el ComboBox
+        # Variables para los ComboBox
         self.producto_seleccionado = tk.StringVar()
+        self.producto_seleccionado_inventario = tk.StringVar()
 
         # Configurar cada uno de los frames
         self.configurar_frame_login()
         self.configurar_frame_menu()
         self.configurar_frame_ventas()
         self.configurar_frame_inventario()
+        self.configurar_frame_historial()
 
         self.mostrar_frame(self.frame_login)
 
@@ -50,7 +53,7 @@ class CajaRegistradoraView:
                         background=self.color_fondo, foreground=self.color_texto)
 
     def mostrar_frame(self, frame):
-        for f in (self.frame_login, self.frame_menu, self.frame_ventas, self.frame_inventario):
+        for f in (self.frame_login, self.frame_menu, self.frame_ventas, self.frame_inventario, self.frame_historial):
             f.pack_forget()
         frame.pack(fill="both", expand=True)
 
@@ -102,13 +105,13 @@ class CajaRegistradoraView:
 
     # ---------- Frame Menú Principal ----------
     def configurar_frame_menu(self):
-        frame_container = tk.Frame(self.frame_menu, bg=self.color_fondo)
-        frame_container.place(relx=0.5, rely=0.5, anchor='center')
+        frame_container = tk.Frame(self.frame_menu, bg=self.color_fondo, padx=40, pady=40)
+        frame_container.pack(fill="both", expand=True)
 
-        titulo = tk.Label(frame_container, text="CAJA REGISTRADORA",
-                            font=("Arial", 22, "bold"),
+        titulo = tk.Label(frame_container, text="MENÚ PRINCIPAL",
+                            font=("Arial", 24, "bold"),
                             bg=self.color_fondo, fg=self.color_texto)
-        titulo.pack(pady=(0, 40))
+        titulo.pack(pady=(0, 30))
 
         btn_ventas = tk.Button(frame_container, text="Módulo de Ventas",
                                 width=25, height=2,
@@ -125,6 +128,14 @@ class CajaRegistradoraView:
                                     font=("Arial", 14, "bold"),
                                     command=lambda: self.mostrar_frame(self.frame_inventario))
         btn_inventario.pack(pady=10)
+
+        btn_historial = tk.Button(frame_container, text="Historial de Ventas",
+                                    width=25, height=2,
+                                    bg=self.color_boton, fg="white",
+                                    activebackground=self.color_boton_hover,
+                                    font=("Arial", 14, "bold"),
+                                    command=lambda: self.mostrar_frame(self.frame_historial))
+        btn_historial.pack(pady=10)
 
         btn_about = tk.Button(frame_container, text="Acerca de",
                                 width=25, height=2,
@@ -251,29 +262,320 @@ class CajaRegistradoraView:
         titulo = tk.Label(main_container, text="MÓDULO DE INVENTARIO",
                             font=("Arial", 18, "bold"),
                             bg=self.color_fondo, fg=self.color_texto)
-        titulo.pack(pady=(0, 20))
+        titulo.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        frame_contenido = tk.Frame(main_container, bg=self.color_fondo, padx=20, pady=20,
+        # Frame izquierdo (formulario)
+        frame_izquierdo = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
+                                    highlightbackground=self.color_texto, highlightthickness=1)
+        frame_izquierdo.grid(row=1, column=0, padx=(0, 10), sticky="nsew")
+
+        tk.Label(frame_izquierdo, text="Gestión de Productos",
+                font=("Arial", 14, "bold"),
+                bg=self.color_fondo, fg=self.color_texto).pack(pady=(0, 15))
+
+        # Formulario para agregar/editar productos
+        tk.Label(frame_izquierdo, text="Producto:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(anchor='w', pady=(0, 5))
+        
+        # ComboBox para seleccionar productos predefinidos
+        nombres_productos = [producto["nombre"] for producto in self.controller.model.productos_disponibles]
+        self.combo_productos_inventario = ttk.Combobox(frame_izquierdo, 
+                                                    textvariable=self.producto_seleccionado_inventario,
+                                                    values=nombres_productos,
+                                                    font=("Arial", 12),
+                                                    state="readonly",
+                                                    width=28)
+        self.combo_productos_inventario.pack(fill="x", pady=(0, 10))
+        self.combo_productos_inventario.bind("<<ComboboxSelected>>", self.controller.actualizar_precio_inventario)
+
+        tk.Label(frame_izquierdo, text="Código:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(anchor='w', pady=(0, 5))
+        self.entry_codigo_producto = ttk.Entry(frame_izquierdo, width=30, font=("Arial", 12))
+        self.entry_codigo_producto.pack(fill="x", pady=(0, 10))
+
+        tk.Label(frame_izquierdo, text="Precio:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(anchor='w', pady=(0, 5))
+        self.entry_precio_producto = ttk.Entry(frame_izquierdo, width=30, font=("Arial", 12))
+        self.entry_precio_producto.pack(fill="x", pady=(0, 10))
+
+        tk.Label(frame_izquierdo, text="Stock:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(anchor='w', pady=(0, 5))
+        self.entry_stock_producto = ttk.Entry(frame_izquierdo, width=30, font=("Arial", 12))
+        self.entry_stock_producto.pack(fill="x", pady=(0, 15))
+
+        # Frame para botones de acción
+        frame_botones = tk.Frame(frame_izquierdo, bg=self.color_fondo)
+        frame_botones.pack(fill="x", pady=10)
+
+        self.btn_agregar_producto = tk.Button(frame_botones, text="Agregar Producto",
+                                width=15, height=1,
+                                bg=self.color_boton, fg="white",
+                                activebackground=self.color_boton_hover,
+                                font=("Arial", 12, "bold"),
+                                command=self.controller.agregar_producto_inventario)
+        self.btn_agregar_producto.pack(side="left", padx=5)
+
+        self.btn_cancelar_edicion = tk.Button(frame_botones, text="Cancelar",
+                                width=10, height=1,
+                                bg=self.color_acento, fg="white",
+                                activebackground=self.color_acento_hover,
+                                font=("Arial", 12, "bold"),
+                                command=self.controller.cancelar_edicion,
+                                state="disabled")
+        self.btn_cancelar_edicion.pack(side="right", padx=5)
+
+        # Frame derecho (tabla de productos)
+        frame_derecho = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                 highlightbackground=self.color_texto, highlightthickness=1)
-        frame_contenido.pack(fill="both", expand=True, padx=20, pady=20)
+        frame_derecho.grid(row=1, column=1, padx=(10, 0), sticky="nsew")
 
-        tk.Label(frame_contenido, text="🔧",
-                font=("Arial", 36),
-                bg=self.color_fondo, fg=self.color_texto).pack(pady=20)
-        tk.Label(frame_contenido, text="Sección en Construcción",
-                font=("Arial", 18, "bold"),
-                bg=self.color_fondo, fg=self.color_texto).pack()
-        tk.Label(frame_contenido, text="Estamos trabajando para implementar esta funcionalidad.",
-                font=("Arial", 12),
-                bg=self.color_fondo, fg=self.color_texto).pack(pady=10)
-        tk.Label(frame_contenido, text="Por favor, vuelve pronto para ver las actualizaciones.",
-                font=("Arial", 12),
-                bg=self.color_fondo, fg=self.color_texto).pack(pady=5)
+        tk.Label(frame_derecho, text="Listado de Productos",
+                font=("Arial", 14, "bold"),
+                bg=self.color_fondo, fg=self.color_texto).pack(pady=(0, 15))
 
+        # Frame para búsqueda
+        frame_busqueda = tk.Frame(frame_derecho, bg=self.color_fondo)
+        frame_busqueda.pack(fill="x", pady=(0, 10))
+
+        tk.Label(frame_busqueda, text="Buscar:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(side="left", padx=(0, 5))
+
+        self.entry_buscar_producto = ttk.Entry(frame_busqueda, width=20, font=("Arial", 12))
+        self.entry_buscar_producto.pack(side="left", padx=(0, 5))
+
+        tk.Label(frame_busqueda, text="Por:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(side="left", padx=(5, 5))
+
+        self.combo_criterio_busqueda = ttk.Combobox(frame_busqueda,
+                                                values=["Todos", "Código", "Nombre"],
+                                                font=("Arial", 12),
+                                                state="readonly",
+                                                width=10)
+        self.combo_criterio_busqueda.pack(side="left", padx=(0, 5))
+        self.combo_criterio_busqueda.current(0)
+
+        btn_buscar = tk.Button(frame_busqueda, text="Buscar",
+                                width=8, height=1,
+                                bg=self.color_boton, fg="white",
+                                activebackground=self.color_boton_hover,
+                                font=("Arial", 10, "bold"),
+                                command=self.controller.buscar_producto)
+        btn_buscar.pack(side="right", padx=5)
+
+        # Tabla de productos (usando Treeview)
+        frame_tabla = tk.Frame(frame_derecho, bg=self.color_fondo)
+        frame_tabla.pack(fill="both", expand=True, pady=10)
+
+        # Scrollbar para la tabla
+        scrollbar = ttk.Scrollbar(frame_tabla)
+        scrollbar.pack(side="right", fill="y")
+
+        # Crear tabla con Treeview
+        self.tabla_productos = ttk.Treeview(frame_tabla, columns=("codigo", "nombre", "precio", "stock"),
+                                        show="headings", height=10,
+                                        yscrollcommand=scrollbar.set)
+        self.tabla_productos.pack(fill="both", expand=True)
+        scrollbar.config(command=self.tabla_productos.yview)
+
+        # Configurar columnas
+        self.tabla_productos.heading("codigo", text="Código")
+        self.tabla_productos.heading("nombre", text="Nombre")
+        self.tabla_productos.heading("precio", text="Precio")
+        self.tabla_productos.heading("stock", text="Stock")
+
+        self.tabla_productos.column("codigo", width=80)
+        self.tabla_productos.column("nombre", width=200)
+        self.tabla_productos.column("precio", width=100)
+        self.tabla_productos.column("stock", width=80)
+
+        # Vincular evento de selección
+        self.tabla_productos.bind("<<TreeviewSelect>>", self.controller.seleccionar_producto_tabla)
+
+        # Frame para botones de acción de la tabla
+        frame_acciones = tk.Frame(frame_derecho, bg=self.color_fondo)
+        frame_acciones.pack(fill="x", pady=10)
+
+        btn_editar = tk.Button(frame_acciones, text="Editar",
+                            width=10, height=1,
+                            bg=self.color_boton, fg="white",
+                            activebackground=self.color_boton_hover,
+                            font=("Arial", 12, "bold"),
+                            command=self.controller.editar_producto)
+        btn_editar.pack(side="left", padx=5)
+
+        btn_eliminar = tk.Button(frame_acciones, text="Eliminar",
+                                width=10, height=1,
+                                bg=self.color_acento, fg="white",
+                                activebackground=self.color_acento_hover,
+                                font=("Arial", 12, "bold"),
+                                command=self.controller.eliminar_producto_inventario)
+        btn_eliminar.pack(side="right", padx=5)
+
+        # Botón para volver al menú
         btn_volver_menu = tk.Button(main_container, text="Volver al Menú",
                                     width=15, height=1,
                                     bg=self.color_boton, fg="white",
                                     activebackground=self.color_boton_hover,
                                     font=("Arial", 12, "bold"),
                                     command=lambda: self.mostrar_frame(self.frame_menu))
-        btn_volver_menu.pack(pady=20)
+        btn_volver_menu.grid(row=2, column=0, columnspan=2, pady=20)
+
+        # Configurar grid
+        main_container.grid_columnconfigure(0, weight=1)
+        main_container.grid_columnconfigure(1, weight=1)
+        main_container.grid_rowconfigure(1, weight=1)
+
+        # Cargar productos en la tabla
+        self.cargar_productos_tabla()
+
+    def cargar_productos_tabla(self):
+        # Limpiar tabla
+        for item in self.tabla_productos.get_children():
+            self.tabla_productos.delete(item)
+            
+        # Cargar productos desde el modelo
+        for producto in self.controller.model.productos_disponibles:
+            # Añadir código y stock a los productos (no existían en el modelo original)
+            codigo = producto.get("codigo", "")
+            stock = producto.get("stock", 0)
+            self.tabla_productos.insert("", "end", values=(codigo, producto["nombre"], f"S/.{producto['precio']:.2f}", stock))
+            
+    def actualizar_tabla_con_resultados(self, resultados):
+        # Limpiar tabla
+        for item in self.tabla_productos.get_children():
+            self.tabla_productos.delete(item)
+            
+        # Cargar resultados en la tabla
+        if not resultados:
+            # Si no hay resultados, mostrar mensaje
+            self.tabla_productos.insert("", "end", values=("No hay", "resultados", "encontrados", ""))
+        else:
+            # Cargar productos encontrados
+            for producto in resultados:
+                codigo = producto.get("codigo", "")
+                stock = producto.get("stock", 0)
+                self.tabla_productos.insert("", "end", values=(codigo, producto["nombre"], f"S/.{producto['precio']:.2f}", stock))
+
+    def configurar_frame_historial(self):
+        main_container = tk.Frame(self.frame_historial, bg=self.color_fondo, padx=20, pady=20)
+        main_container.pack(fill="both", expand=True)
+
+        titulo = tk.Label(main_container, text="HISTORIAL DE MOVIMIENTOS",
+                            font=("Arial", 18, "bold"),
+                            bg=self.color_fondo, fg=self.color_texto)
+        titulo.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+
+        # Frame para filtros
+        frame_filtros = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
+                                highlightbackground=self.color_texto, highlightthickness=1)
+        frame_filtros.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        tk.Label(frame_filtros, text="Filtrar por fecha:",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(side="left", padx=5)
+
+        self.entry_fecha_inicio = ttk.Entry(frame_filtros, width=15, font=("Arial", 12))
+        self.entry_fecha_inicio.pack(side="left", padx=5)
+        self.entry_fecha_inicio.insert(0, "DD/MM/AAAA")
+
+        tk.Label(frame_filtros, text="hasta",
+                font=("Arial", 12),
+                bg=self.color_fondo, fg=self.color_texto).pack(side="left", padx=5)
+
+        self.entry_fecha_fin = ttk.Entry(frame_filtros, width=15, font=("Arial", 12))
+        self.entry_fecha_fin.pack(side="left", padx=5)
+        self.entry_fecha_fin.insert(0, "DD/MM/AAAA")
+
+        btn_buscar = tk.Button(frame_filtros, text="Buscar",
+                                width=8, height=1,
+                                bg=self.color_boton, fg="white",
+                                activebackground=self.color_boton_hover,
+                                font=("Arial", 10, "bold"),
+                                command=self.controller.buscar_ventas_por_fecha)
+        btn_buscar.pack(side="left", padx=5)
+
+        btn_mostrar_todo = tk.Button(frame_filtros, text="Mostrar Todo",
+                                width=10, height=1,
+                                bg=self.color_boton, fg="white",
+                                activebackground=self.color_boton_hover,
+                                font=("Arial", 10, "bold"),
+                                command=self.controller.mostrar_todo_historial)
+        btn_mostrar_todo.pack(side="left", padx=5)
+
+        # Tabla de historial
+        frame_tabla = tk.Frame(main_container, bg=self.color_fondo)
+        frame_tabla.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=10)
+
+        # Scrollbar para la tabla
+        scrollbar = ttk.Scrollbar(frame_tabla)
+        scrollbar.pack(side="right", fill="y")
+
+        # Crear tabla con Treeview
+        self.tabla_historial = ttk.Treeview(frame_tabla, 
+                                        columns=("codigo", "fecha", "producto", "cantidad", "precio_unitario", "total"),
+                                        show="headings", height=15,
+                                        yscrollcommand=scrollbar.set)
+        self.tabla_historial.pack(fill="both", expand=True)
+        scrollbar.config(command=self.tabla_historial.yview)
+
+        # Configurar columnas
+        self.tabla_historial.heading("codigo", text="Código")
+        self.tabla_historial.heading("fecha", text="Fecha")
+        self.tabla_historial.heading("producto", text="Producto")
+        self.tabla_historial.heading("cantidad", text="Cantidad")
+        self.tabla_historial.heading("precio_unitario", text="Precio Unit.")
+        self.tabla_historial.heading("total", text="Total")
+
+        self.tabla_historial.column("codigo", width=100)
+        self.tabla_historial.column("fecha", width=150)
+        self.tabla_historial.column("producto", width=200)
+        self.tabla_historial.column("cantidad", width=80)
+        self.tabla_historial.column("precio_unitario", width=100)
+        self.tabla_historial.column("total", width=100)
+
+        # Botón para volver al menú
+        btn_volver_menu = tk.Button(main_container, text="Volver al Menú",
+                                    width=15, height=1,
+                                    bg=self.color_boton, fg="white",
+                                    activebackground=self.color_boton_hover,
+                                    font=("Arial", 12, "bold"),
+                                    command=lambda: self.mostrar_frame(self.frame_menu))
+        btn_volver_menu.grid(row=3, column=0, columnspan=2, pady=20)
+
+        # Configurar grid
+        main_container.grid_columnconfigure(0, weight=1)
+        main_container.grid_columnconfigure(1, weight=1)
+        main_container.grid_rowconfigure(2, weight=1)
+
+    def cargar_historial_tabla(self, historial):
+        # Limpiar tabla
+        for item in self.tabla_historial.get_children():
+            self.tabla_historial.delete(item)
+            
+        # Cargar historial en la tabla
+        for registro in historial:
+            if registro["tipo"] == "venta":
+                for producto in registro["productos"]:
+                    self.tabla_historial.insert("", "end", values=(
+                        registro["codigo"],
+                        registro["fecha"],
+                        producto["producto"],
+                        producto["cantidad"],
+                        f"S/.{producto['precio']:.2f}",
+                        f"S/.{producto['subtotal']:.2f}"
+                    ))
+            else:  # tipo == "ingreso"
+                self.tabla_historial.insert("", "end", values=(
+                    registro["codigo"],
+                    registro["fecha"],
+                    registro["producto"],
+                    f"+{registro['cantidad']}",  # Agregar + para indicar ingreso
+                    f"S/.{registro['precio']:.2f}",
+                    f"S/.{registro['precio'] * registro['cantidad']:.2f}"
+                ))
