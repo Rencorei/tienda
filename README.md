@@ -1,118 +1,85 @@
-# Sistema de Caja Registradora
+# Caja Registradora Tienda
 
-Sistema de gestión de ventas e inventario desarrollado en Python con interfaz gráfica Tkinter.
+Aplicación de caja registradora para tiendas, desarrollada en Python usando el patrón MVC, con interfaz gráfica en Tkinter y conexión a base de datos MySQL.
 
-## Características Principales
+## Características
 
-### 1. Módulo de Ventas
-- Registro de ventas con múltiples productos
-- Cálculo automático de totales
-- Generación de tickets de venta
-- Control de stock automático
-- Códigos de venta únicos (F01-XXXX)
-
-### 2. Módulo de Inventario
-- Gestión completa de productos
-- Control de stock
-- Registro de ingresos de productos
-- Códigos de ingreso únicos (B01-XXXX)
-- Búsqueda de productos por código o nombre
-
-### 3. Historial de Movimientos
-- Registro de todas las ventas realizadas
-- Registro de todos los ingresos de productos
-- Filtrado por fecha
-- Visualización detallada de cada movimiento
-- Códigos únicos para cada operación
-
-## Requisitos del Sistema
-
-- Python 3.x
-- Tkinter (incluido en la instalación estándar de Python)
-
-## Instalación
-
-1. Clonar el repositorio:
-```bash
-git clone [URL_DEL_REPOSITORIO]
-```
-
-2. Navegar al directorio del proyecto:
-```bash
-cd caja-registradora
-```
-
-3. Ejecutar el programa:
-```bash
-python main.py
-```
-
-## Credenciales de Acceso
-
-- Usuario: admin
-- Contraseña: 1234
+- **Gestión de usuarios:** Login seguro con roles (admin/cajero).
+- **Inventario:** Alta, edición, eliminación y búsqueda de productos.
+- **Ventas:** Registro de ventas, control de stock y generación de tickets.
+- **Historial:** Consulta de ventas y movimientos de inventario por fecha.
+- **Interfaz amigable:** Visual moderna y fácil de usar.
+- **Persistencia:** Todos los datos se almacenan en MySQL.
 
 ## Estructura del Proyecto
 
+- `main.py`: Punto de entrada de la aplicación.
+- `controller.py`: Lógica de control y comunicación entre vista y modelo.
+- `model.py`: Acceso y lógica de datos (MySQL).
+- `view.py`: Interfaz gráfica de usuario (Tkinter).
+- `db_config.py`: Configuración y utilidades para la base de datos.
+- `caja_registradoraBD.sql`: Script para crear y poblar la base de datos.
+
+## Requisitos
+
+- Python 3.10+
+- MySQL Server
+- Paquetes Python:
+  - `mysql-connector-python`
+  - `tkinter` (incluido en la mayoría de instalaciones de Python)
+
+Instala dependencias con:
+```sh
+pip install mysql-connector-python
 ```
-caja-registradora/
-├── main.py              # Punto de entrada de la aplicación
-├── controller.py        # Controlador de la aplicación
-├── model.py            # Modelo de datos
-├── view.py             # Interfaz de usuario
-└── README.md           # Documentación
-```
 
-## Funcionalidades Detalladas
+## Instalación y Configuración
 
-### Gestión de Ventas
-- Selección de productos desde una lista desplegable
-- Ingreso de cantidades
-- Cálculo automático de subtotales y total
-- Eliminación de productos de la venta
-- Generación de tickets de venta con código único
+1. **Clona o descarga este repositorio.**
 
-### Gestión de Inventario
-- Agregar nuevos productos
-- Editar productos existentes
-- Eliminar productos
-- Control de stock automático
-- Registro de ingresos de productos
+2. **Crea la base de datos:**
+   - Abre MySQL Workbench, consola o phpMyAdmin.
+   - Ejecuta el script [`caja_registradoraBD.sql`](caja_registradoraBD.sql).
 
-### Historial de Movimientos
-- Visualización de todas las operaciones
-- Filtrado por fecha
-- Detalles de cada operación:
-  - Código único
-  - Fecha y hora
-  - Producto
-  - Cantidad
-  - Precio unitario
-  - Total
+3. **Configura la conexión a la base de datos:**
+   - Edita [`db_config.py`](db_config.py) si tu usuario, contraseña o puerto de MySQL son diferentes.
 
-## Notas de Uso
+4. **Ejecuta la aplicación:**
+   ```sh
+   python main.py
+   ```
 
-1. Al realizar una venta:
-   - El sistema verifica el stock disponible
-   - Genera un código único de venta
-   - Actualiza automáticamente el inventario
-   - Registra la operación en el historial
+## Uso
 
-2. Al agregar productos al inventario:
-   - Se genera un código único de ingreso
-   - Se actualiza el stock
-   - Se registra la operación en el historial
+1. **Inicia sesión** con uno de los usuarios predefinidos:
+   - admin / 1234 (rol admin)
+   - cajera01 / ventas01 (rol cajero)
+   - cajero02 / ventas02 (rol cajero)
 
-3. El historial muestra:
-   - Ventas con código F01-XXXX
-   - Ingresos con código B01-XXXX
-   - Cantidades positivas para ventas
-   - Cantidades con "+" para ingresos
+2. **Navega** por los módulos:
+   - **Ventas:** Agrega productos, finaliza ventas y genera tickets.
+   - **Inventario:** Agrega, edita, elimina y busca productos.
+   - **Historial:** Consulta ventas y movimientos por fecha.
 
-## Soporte
+## Estructura de la Base de Datos
 
-Para reportar problemas o solicitar ayuda, por favor crear un issue en el repositorio del proyecto.
+- **usuarios:** Usuarios del sistema (con roles).
+- **productos:** Inventario de productos.
+- **ventas:** Registro de ventas.
+- **venta_items:** Detalle de productos vendidos por venta.
+- **movimientos_inventario:** Historial de ingresos y ventas de productos.
 
-## Licencia
+Consulta el archivo [`caja_registradoraBD.sql`](caja_registradoraBD.sql) para detalles de las tablas y datos de ejemplo.
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles. 
+## Capturas de Pantalla
+
+*(Agrega aquí imágenes de la interfaz si lo deseas)*
+
+## Créditos
+
+Desarrollado por SkynetSoft Code  
+Hecho con café y algo de sarcasmo ☕️
+
+---
+
+**Licencia:** MIT

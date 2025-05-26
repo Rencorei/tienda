@@ -4,26 +4,43 @@ import datetime
 from model import CajaRegistradoraModel
 from view import CajaRegistradoraView
 
+# Clase principal que implementa el controlador en el patrón MVC
+# Gestiona la lógica de la aplicación y la comunicación entre el modelo y la vista
 class CajaRegistradoraController:
     def __init__(self, root):
-        self.model = CajaRegistradoraModel()
-        self.view = CajaRegistradoraView(root, self)
+        self.model = CajaRegistradoraModel()  # Inicializa el modelo (datos)
+        self.view = CajaRegistradoraView(root, self)  # Inicializa la vista (interfaz)
 
+    # ---------- Métodos para el Módulo de Login ----------
     def validar_login(self):
+        # Autenticación usando la base de datos
         usuario = self.view.entry_usuario.get()
         password = self.view.entry_password.get()
-        if usuario == "admin" and password == "1234":
+        
+        if not usuario or not password:
+            messagebox.showerror("Error de Login", "Debe ingresar usuario y contraseña.")
+            return
+            
+        success, result = self.model.validar_usuario(usuario, password)
+        
+        if success:
             self.view.mostrar_frame(self.view.frame_menu)
+            # Mostrar mensaje de bienvenida con el rol del usuario
+            messagebox.showinfo("Bienvenido", f"Bienvenido {usuario}\nRol: {result['rol']}")
         else:
-            messagebox.showerror("Error de Login",
-                                "Usuario o contraseña incorrectos.\nQuizá deberías revisar tu memoria.")
+            messagebox.showerror("Error de Login", "Usuario o contraseña incorrectos.")
+
 
     def cerrar_sesion(self):
+        # Limpia los campos y vuelve a la pantalla de login
         self.view.entry_usuario.delete(0, tk.END)
         self.view.entry_password.delete(0, tk.END)
+        self.model.cerrar_sesion()
         self.view.mostrar_frame(self.view.frame_login)
 
+    # ---------- Métodos para el Módulo de Ventas ----------
     def actualizar_precio(self, event=None):
+        # Actualiza el precio mostrado cuando se selecciona un producto
         nombre_producto = self.view.producto_seleccionado.get()
         for producto in self.model.productos_disponibles:
             if producto["nombre"] == nombre_producto:
@@ -34,6 +51,7 @@ class CajaRegistradoraController:
                 break
 
     def agregar_producto(self):
+        # Agrega un producto a la venta actual
         nombre_producto = self.view.producto_seleccionado.get()
         if not nombre_producto:
             messagebox.showerror("Error", "Debe seleccionar un producto.")
@@ -48,12 +66,14 @@ class CajaRegistradoraController:
             messagebox.showerror("Error", "Cantidad inválida. ¿Te saltaste la clase de matemáticas?")
             return
 
+        # Buscar el precio del producto seleccionado
         precio = 0
         for producto in self.model.productos_disponibles:
             if producto["nombre"] == nombre_producto:
                 precio = producto["precio"]
                 break
 
+        # Calcular subtotal y agregar a la lista de productos en venta
         subtotal = precio * cantidad
         self.model.productos_venta.append({
             "producto": nombre_producto,
@@ -62,11 +82,12 @@ class CajaRegistradoraController:
             "subtotal": subtotal,
             "index": len(self.model.productos_venta)
         })
-        self.model.total_venta += subtotal
+        # Convertir subtotal a float antes de sumarlo para evitar error de tipos incompatibles
+        self.model.total_venta += float(subtotal)
         self.view.lista_ventas.insert(tk.END, f"{nombre_producto} - {cantidad} x S/.{precio:.2f} = S/.{subtotal:.2f}")
         self.view.label_total.config(text=f"Total: S/.{self.model.total_venta:.2f}")
 
-        # Limpiar campos
+        # Limpiar campos para el siguiente producto
         self.view.combo_productos.set('')
         self.view.entry_precio.config(state="normal")
         self.view.entry_precio.delete(0, tk.END)
@@ -75,19 +96,27 @@ class CajaRegistradoraController:
         self.view.entry_cantidad.insert(0, "1")
 
     def eliminar_producto(self):
+        # Elimina un producto de la venta actual
         try:
             index = self.view.lista_ventas.curselection()[0]
             self.view.lista_ventas.delete(index)
             producto_eliminado = self.model.productos_venta[index]
-            self.model.total_venta -= producto_eliminado["subtotal"]
+            # Convertir subtotal a float antes de restarlo para evitar error de tipos incompatibles
+            self.model.total_venta -= float(producto_eliminado["subtotal"])
             self.view.label_total.config(text=f"Total: S/.{self.model.total_venta:.2f}")
             self.model.productos_venta.pop(index)
         except IndexError:
             messagebox.showerror("Error", "Debe seleccionar un producto para eliminar.")
 
     def finalizar_venta(self):
+        # Procesa y finaliza la venta actual
         if self.model.total_venta == 0:
             messagebox.showinfo("Venta", "No hay nada que cobrar. ¿Vendiendo aire?")
+            return
+        
+        # Verificar que haya un usuario con sesión activa
+        if not self.model.usuario_actual:
+            messagebox.showerror("Error", "Debe iniciar sesión para realizar una venta.")
             return
             
         # Verificar stock suficiente antes de finalizar la venta
@@ -111,14 +140,15 @@ class CajaRegistradoraController:
             messagebox.showerror("Error de Inventario", mensaje_error)
             return
             
-        # Generar código de venta
+        # Generar código de venta y fecha
         codigo_venta = self.model.generar_codigo_venta()
-        fecha_venta = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        fecha_venta = datetime.datetime.now()
             
-        # Generar resumen de venta
+        # Generar resumen de venta para el ticket
         resumen = "RESUMEN DE VENTA\n" + "=" * 40 + "\n\n"
         resumen += f"Código de Venta: {codigo_venta}\n"
-        resumen += f"Fecha: {fecha_venta}\n\n"
+        resumen += f"Fecha: {fecha_venta.strftime('%d/%m/%Y %H:%M:%S')}\n"
+        resumen += f"Vendedor: {self.model.usuario_actual['usuario']}\n\n"
         for i, item in enumerate(self.model.productos_venta):
             resumen += f"{i+1}. {item['producto']}\n"
             resumen += f"   {item['cantidad']} x S/.{item['precio']:.2f} = S/.{item['subtotal']:.2f}\n"
@@ -127,44 +157,24 @@ class CajaRegistradoraController:
         resumen += f"Total a pagar: S/.{self.model.total_venta:.2f}\n\n"
         resumen += "¡Gracias por su compra!"
         
-        # Actualizar el inventario
-        actualizaciones_stock = []
-        for item in self.model.productos_venta:
-            nombre_producto = item['producto']
-            cantidad_venta = item['cantidad']
-            
-            # Buscar el producto en el inventario y actualizar stock
-            for producto in self.model.productos_disponibles:
-                if producto["nombre"] == nombre_producto:
-                    codigo = producto["codigo"]
-                    precio = producto["precio"]
-                    stock_anterior = producto["stock"]
-                    nuevo_stock = producto["stock"] - cantidad_venta
-                    self.model.actualizar_producto(codigo, nombre_producto, precio, nuevo_stock)
-                    actualizaciones_stock.append(f"{nombre_producto}: {stock_anterior} → {nuevo_stock}")
-                    break
+        # Guardar la venta en la base de datos
+        success, mensaje = self.model.agregar_venta_al_historial(codigo_venta, fecha_venta, self.model.productos_venta, self.model.total_venta)
         
-        # Guardar la venta en el historial
-        self.model.agregar_venta_al_historial(codigo_venta, fecha_venta, self.model.productos_venta, self.model.total_venta)
+        if not success:
+            messagebox.showerror("Error", f"Error al registrar la venta: {mensaje}")
+            return
         
         # Mostrar ticket y limpiar venta actual
         self.mostrar_ticket(resumen)
         
-        # Mostrar resumen de actualización de stock
-        mensaje_stock = "Actualización de Stock:\n\n"
-        for actualizacion in actualizaciones_stock:
-            mensaje_stock += f"- {actualizacion}\n"
-        messagebox.showinfo("Stock Actualizado", mensaje_stock)
-        
+        # Reiniciar la venta actual
         self.view.lista_ventas.delete(0, tk.END)
         self.model.total_venta = 0
         self.model.productos_venta = []
         self.view.label_total.config(text="Total: S/.0.00")
         
-        # Actualizar la tabla de productos en el módulo de inventario
+        # Actualizar interfaces con los nuevos datos
         self.view.cargar_productos_tabla()
-        
-        # Actualizar el ComboBox de productos en el módulo de ventas
         self.view.combo_productos['values'] = [p["nombre"] for p in self.model.productos_disponibles]
         
         # Actualizar la tabla de historial si está visible
@@ -172,6 +182,7 @@ class CajaRegistradoraController:
             self.view.cargar_historial_tabla(self.model.obtener_historial_ventas())
 
     def mostrar_ticket(self, texto):
+        # Crea y muestra una ventana con el ticket de venta
         ticket_window = tk.Toplevel(self.view.root)
         ticket_window.title("Ticket de Venta")
         ticket_window.geometry("400x550")
@@ -216,6 +227,7 @@ class CajaRegistradoraController:
         btn_cerrar.pack(side="right", padx=5)
 
     def mostrar_about(self):
+        # Muestra la ventana "Acerca de" con información de la aplicación
         about_window = tk.Toplevel(self.view.root)
         about_window.title("Acerca de")
         about_window.geometry("400x300")
@@ -245,31 +257,38 @@ class CajaRegistradoraController:
                 command=about_window.destroy).pack(pady=20)
                 
     # ---------- Métodos para el Módulo de Inventario ----------
-    def actualizar_precio_inventario(self, event):
+    def actualizar_precio_inventario(self, event=None):
+        # Actualiza los campos cuando se selecciona un producto en el inventario
         nombre_producto = self.view.producto_seleccionado_inventario.get()
-        for producto in self.model.productos_disponibles:
-            if producto["nombre"] == nombre_producto:
-                # Actualizar código
-                self.view.entry_codigo_producto.config(state="normal")
-                self.view.entry_codigo_producto.delete(0, tk.END)
-                self.view.entry_codigo_producto.insert(0, producto["codigo"])
-                self.view.entry_codigo_producto.config(state="readonly")
-                
-                # Actualizar precio
-                self.view.entry_precio_producto.config(state="normal")
-                self.view.entry_precio_producto.delete(0, tk.END)
-                self.view.entry_precio_producto.insert(0, f"{producto['precio']:.2f}")
-                self.view.entry_precio_producto.config(state="readonly")
-                break
+        if nombre_producto:
+            for producto in self.model.productos_disponibles:
+                if producto["nombre"] == nombre_producto:
+                    self.view.entry_codigo_producto.config(state="normal")
+                    self.view.entry_codigo_producto.delete(0, tk.END)
+                    self.view.entry_codigo_producto.insert(0, producto["codigo"])
+                    self.view.entry_codigo_producto.config(state="readonly")
+                    
+                    self.view.entry_precio_producto.config(state="normal")
+                    self.view.entry_precio_producto.delete(0, tk.END)
+                    self.view.entry_precio_producto.insert(0, f"{producto['precio']:.2f}")
+                    self.view.entry_precio_producto.config(state="readonly")
+                    
+                    self.view.entry_stock_producto.delete(0, tk.END)
+                    self.view.entry_stock_producto.insert(0, producto["stock"])
+                    # Deshabilitar edición del código si es un producto existente
+                    self.view.btn_agregar_producto.config(text="Actualizar Producto")
+                    self.view.btn_cancelar_edicion.config(state="normal")
+                    break
                 
     def agregar_producto_inventario(self):
+        # Agrega o actualiza un producto en el inventario
         # Obtener datos del formulario
         codigo = self.view.entry_codigo_producto.get().strip()
         nombre_producto = self.view.producto_seleccionado_inventario.get().strip()
         precio_str = self.view.entry_precio_producto.get().strip()
         stock_str = self.view.entry_stock_producto.get().strip()
         
-        # Validar datos
+        # Validar datos ingresados
         if not codigo or not nombre_producto or not precio_str or not stock_str:
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
@@ -292,7 +311,7 @@ class CajaRegistradoraController:
             messagebox.showerror("Error", "El stock debe ser un valor entero.")
             return
         
-        # Verificar si estamos en modo edición
+        # Verificar si estamos en modo edición o agregando nuevo producto
         if hasattr(self, 'producto_en_edicion') and self.producto_en_edicion:
             # Actualizar producto existente
             exito, mensaje = self.model.actualizar_producto(codigo, nombre_producto, precio, stock)
@@ -316,9 +335,17 @@ class CajaRegistradoraController:
                 exito, mensaje = self.model.actualizar_producto(codigo, nombre_producto, precio, nuevo_stock)
                 if exito:
                     # Generar código de ingreso y registrar en el historial
-                    codigo_ingreso = self.model.generar_codigo_ingreso()
+                    codigo_ingreso = self.model.generar_codigo_movimiento()
                     fecha_ingreso = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                    self.model.agregar_ingreso_al_historial(codigo_ingreso, fecha_ingreso, nombre_producto, stock, precio)
+                    
+                    # Obtener el ID del producto
+                    for producto in self.model.productos_disponibles:
+                        if producto["codigo"] == codigo:
+                            producto_id = producto["id"]
+                            break
+                    
+                    # Registrar el movimiento de inventario
+                    self.model.registrar_movimiento_inventario(producto_id, 'ingreso', stock, precio)
                     
                     messagebox.showinfo("Éxito", f"Stock actualizado correctamente\nCódigo de ingreso: {codigo_ingreso}")
                     self.limpiar_formulario_inventario()
@@ -326,7 +353,7 @@ class CajaRegistradoraController:
                     
                     # Actualizar la tabla de historial si está visible
                     if self.view.frame_historial.winfo_viewable():
-                        self.view.cargar_historial_tabla(self.model.obtener_historial_completo())
+                        self.view.cargar_historial_tabla(self.model.obtener_historial_ventas())
                 else:
                     messagebox.showerror("Error", mensaje)
             else:
@@ -334,9 +361,17 @@ class CajaRegistradoraController:
                 exito, mensaje = self.model.agregar_producto(codigo, nombre_producto, precio, stock)
                 if exito:
                     # Generar código de ingreso y registrar en el historial
-                    codigo_ingreso = self.model.generar_codigo_ingreso()
+                    codigo_ingreso = self.model.generar_codigo_movimiento()
                     fecha_ingreso = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                    self.model.agregar_ingreso_al_historial(codigo_ingreso, fecha_ingreso, nombre_producto, stock, precio)
+                    
+                    # Obtener el ID del producto
+                    for producto in self.model.productos_disponibles:
+                        if producto["codigo"] == codigo:
+                            producto_id = producto["id"]
+                            break
+                    
+                    # Registrar el movimiento de inventario
+                    self.model.registrar_movimiento_inventario(producto_id, 'ingreso', stock, precio)
                     
                     messagebox.showinfo("Éxito", f"{mensaje}\nCódigo de ingreso: {codigo_ingreso}")
                     self.limpiar_formulario_inventario()
@@ -344,12 +379,12 @@ class CajaRegistradoraController:
                     
                     # Actualizar la tabla de historial si está visible
                     if self.view.frame_historial.winfo_viewable():
-                        self.view.cargar_historial_tabla(self.model.obtener_historial_completo())
+                        self.view.cargar_historial_tabla(self.model.obtener_historial_ventas())
                 else:
                     messagebox.showerror("Error", mensaje)
     
     def editar_producto(self):
-        # Obtener el producto seleccionado en la tabla
+        # Carga los datos de un producto seleccionado para edición
         seleccion = self.view.tabla_productos.selection()
         if not seleccion:
             messagebox.showerror("Error", "Debe seleccionar un producto para editar.")
@@ -389,7 +424,7 @@ class CajaRegistradoraController:
                 break
     
     def cancelar_edicion(self):
-        # Limpiar el formulario y restablecer el estado
+        # Cancela el modo de edición y limpia el formulario
         self.limpiar_formulario_inventario()
         self.view.entry_codigo_producto.config(state="normal")
         self.view.btn_agregar_producto.config(text="Agregar Producto")
@@ -397,7 +432,7 @@ class CajaRegistradoraController:
         self.producto_en_edicion = None
     
     def limpiar_formulario_inventario(self):
-        # Limpiar todos los campos del formulario
+        # Limpia todos los campos del formulario de inventario
         self.view.entry_codigo_producto.config(state="normal")
         self.view.entry_codigo_producto.delete(0, tk.END)
         self.view.combo_productos_inventario.set('')
@@ -407,7 +442,7 @@ class CajaRegistradoraController:
         self.view.entry_stock_producto.delete(0, tk.END)
     
     def eliminar_producto_inventario(self):
-        # Obtener el producto seleccionado en la tabla
+        # Elimina un producto del inventario
         seleccion = self.view.tabla_productos.selection()
         if not seleccion:
             messagebox.showerror("Error", "Debe seleccionar un producto para eliminar.")
@@ -435,7 +470,7 @@ class CajaRegistradoraController:
                 messagebox.showerror("Error", mensaje)
     
     def buscar_producto(self):
-        # Obtener texto de búsqueda y criterio
+        # Busca productos según criterio y texto ingresado
         texto = self.view.entry_buscar_producto.get().strip()
         criterio = self.view.combo_criterio_busqueda.get()
         
@@ -450,13 +485,15 @@ class CajaRegistradoraController:
         # Se puede usar para mostrar detalles adicionales o habilitar botones
         pass
 
+    # ---------- Métodos para el Módulo de Historial ----------
     def buscar_ventas_por_fecha(self):
+        # Filtra el historial por rango de fechas
         try:
             fecha_inicio = datetime.datetime.strptime(self.view.entry_fecha_inicio.get(), "%d/%m/%Y")
             fecha_fin = datetime.datetime.strptime(self.view.entry_fecha_fin.get(), "%d/%m/%Y")
             fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59)
             
-            historial_completo = self.model.obtener_historial_completo()
+            historial_completo = self.model.obtener_historial_ventas()
             resultados = []
             
             for registro in historial_completo:
@@ -469,5 +506,6 @@ class CajaRegistradoraController:
             messagebox.showerror("Error", "Formato de fecha inválido. Use DD/MM/AAAA")
     
     def mostrar_todo_historial(self):
-        historial_completo = self.model.obtener_historial_completo()
+        # Muestra el historial completo sin filtros
+        historial_completo = self.model.obtener_historial_ventas()
         self.view.cargar_historial_tabla(historial_completo)

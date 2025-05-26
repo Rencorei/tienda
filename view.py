@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+# Clase principal que implementa la vista en el patrón MVC
+# Gestiona toda la interfaz gráfica de usuario y la presentación visual
 class CajaRegistradoraView:
     def __init__(self, root, controller):
         self.root = root
@@ -10,7 +12,7 @@ class CajaRegistradoraView:
         self.root.geometry("1000x600")
         self.root.resizable(False, False)
 
-        # Paleta de colores
+        # Paleta de colores para toda la aplicación
         self.color_fondo = "#2C3E50"
         self.color_texto = "#ECF0F1"
         self.color_boton = "#3498DB"
@@ -20,7 +22,7 @@ class CajaRegistradoraView:
 
         self.configurar_estilo()
 
-        # Creación de frames
+        # Creación de frames principales para cada módulo
         self.frame_login = tk.Frame(self.root, bg=self.color_fondo)
         self.frame_menu = tk.Frame(self.root, bg=self.color_fondo)
         self.frame_ventas = tk.Frame(self.root, bg=self.color_fondo)
@@ -40,6 +42,7 @@ class CajaRegistradoraView:
 
         self.mostrar_frame(self.frame_login)
 
+    # Configura el estilo visual de los widgets ttk
     def configurar_estilo(self):
         style = ttk.Style()
         style.theme_use('default')
@@ -52,6 +55,7 @@ class CajaRegistradoraView:
         style.configure('Title.TLabel', font=('Arial', 18, 'bold'),
                         background=self.color_fondo, foreground=self.color_texto)
 
+    # Gestiona la navegación entre frames (pantallas)
     def mostrar_frame(self, frame):
         for f in (self.frame_login, self.frame_menu, self.frame_ventas, self.frame_inventario, self.frame_historial):
             f.pack_forget()
@@ -154,6 +158,7 @@ class CajaRegistradoraView:
         btn_cerrar_sesion.pack(pady=30)
 
     # ---------- Frame Ventas ----------
+    # Interfaz para registrar ventas de productos
     def configurar_frame_ventas(self):
         main_container = tk.Frame(self.frame_ventas, bg=self.color_fondo, padx=20, pady=20)
         main_container.pack(fill="both", expand=True)
@@ -163,7 +168,7 @@ class CajaRegistradoraView:
                             bg=self.color_fondo, fg=self.color_texto)
         titulo.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 
-        # Contenedor izquierdo (formulario)
+        # Contenedor izquierdo (formulario para agregar productos)
         frame_izquierdo = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                     highlightbackground=self.color_texto, highlightthickness=1)
         frame_izquierdo.grid(row=1, column=0, padx=(0, 10), sticky="nsew")
@@ -176,6 +181,7 @@ class CajaRegistradoraView:
                 font=("Arial", 12),
                 bg=self.color_fondo, fg=self.color_texto).pack(anchor='w', pady=(0, 5))
 
+        # ComboBox para seleccionar productos del inventario
         self.combo_productos = ttk.Combobox(frame_izquierdo,
                                             values=[p["nombre"] for p in self.controller.model.productos_disponibles],
                                             font=("Arial", 12),
@@ -206,7 +212,7 @@ class CajaRegistradoraView:
                                 command=self.controller.agregar_producto)
         btn_agregar.pack(pady=10)
 
-        # Contenedor derecho (detalle de venta)
+        # Contenedor derecho (detalle de venta y total)
         frame_derecho = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                 highlightbackground=self.color_texto, highlightthickness=1)
         frame_derecho.grid(row=1, column=1, padx=(10, 0), sticky="nsew")
@@ -215,6 +221,7 @@ class CajaRegistradoraView:
                 font=("Arial", 14, "bold"),
                 bg=self.color_fondo, fg=self.color_texto).pack(pady=(0, 15))
 
+        # Lista de productos agregados a la venta actual
         self.lista_ventas = tk.Listbox(frame_derecho, width=50, height=10,
                                     font=("Arial", 12),
                                     bg=self.color_texto, fg=self.color_fondo,
@@ -229,6 +236,7 @@ class CajaRegistradoraView:
                                 command=self.controller.eliminar_producto)
         btn_eliminar.pack(pady=5)
 
+        # Etiqueta para mostrar el total de la venta
         self.label_total = tk.Label(frame_derecho, text="Total: S/.0.00",
                                     font=("Arial", 16, "bold"),
                                     bg=self.color_fondo, fg=self.color_texto)
@@ -255,6 +263,7 @@ class CajaRegistradoraView:
         main_container.grid_rowconfigure(1, weight=1)
 
     # ---------- Frame Inventario ----------
+    # Interfaz para gestionar el inventario de productos
     def configurar_frame_inventario(self):
         main_container = tk.Frame(self.frame_inventario, bg=self.color_fondo, padx=20, pady=20)
         main_container.pack(fill="both", expand=True)
@@ -264,7 +273,7 @@ class CajaRegistradoraView:
                             bg=self.color_fondo, fg=self.color_texto)
         titulo.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        # Frame izquierdo (formulario)
+        # Frame izquierdo (formulario para agregar/editar productos)
         frame_izquierdo = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                     highlightbackground=self.color_texto, highlightthickness=1)
         frame_izquierdo.grid(row=1, column=0, padx=(0, 10), sticky="nsew")
@@ -328,7 +337,7 @@ class CajaRegistradoraView:
                                 state="disabled")
         self.btn_cancelar_edicion.pack(side="right", padx=5)
 
-        # Frame derecho (tabla de productos)
+        # Frame derecho (tabla de productos y búsqueda)
         frame_derecho = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                 highlightbackground=self.color_texto, highlightthickness=1)
         frame_derecho.grid(row=1, column=1, padx=(10, 0), sticky="nsew")
@@ -337,7 +346,7 @@ class CajaRegistradoraView:
                 font=("Arial", 14, "bold"),
                 bg=self.color_fondo, fg=self.color_texto).pack(pady=(0, 15))
 
-        # Frame para búsqueda
+        # Barra de búsqueda para filtrar productos
         frame_busqueda = tk.Frame(frame_derecho, bg=self.color_fondo)
         frame_busqueda.pack(fill="x", pady=(0, 10))
 
@@ -368,7 +377,7 @@ class CajaRegistradoraView:
                                 command=self.controller.buscar_producto)
         btn_buscar.pack(side="right", padx=5)
 
-        # Tabla de productos (usando Treeview)
+        # Tabla de productos usando Treeview
         frame_tabla = tk.Frame(frame_derecho, bg=self.color_fondo)
         frame_tabla.pack(fill="both", expand=True, pady=10)
 
@@ -376,7 +385,7 @@ class CajaRegistradoraView:
         scrollbar = ttk.Scrollbar(frame_tabla)
         scrollbar.pack(side="right", fill="y")
 
-        # Crear tabla con Treeview
+        # Crear tabla con Treeview para mostrar productos
         self.tabla_productos = ttk.Treeview(frame_tabla, columns=("codigo", "nombre", "precio", "stock"),
                                         show="headings", height=10,
                                         yscrollcommand=scrollbar.set)
@@ -434,6 +443,7 @@ class CajaRegistradoraView:
         # Cargar productos en la tabla
         self.cargar_productos_tabla()
 
+    # Carga los productos del modelo en la tabla de inventario
     def cargar_productos_tabla(self):
         # Limpiar tabla
         for item in self.tabla_productos.get_children():
@@ -446,6 +456,7 @@ class CajaRegistradoraView:
             stock = producto.get("stock", 0)
             self.tabla_productos.insert("", "end", values=(codigo, producto["nombre"], f"S/.{producto['precio']:.2f}", stock))
             
+    # Actualiza la tabla con los resultados de búsqueda
     def actualizar_tabla_con_resultados(self, resultados):
         # Limpiar tabla
         for item in self.tabla_productos.get_children():
@@ -462,6 +473,8 @@ class CajaRegistradoraView:
                 stock = producto.get("stock", 0)
                 self.tabla_productos.insert("", "end", values=(codigo, producto["nombre"], f"S/.{producto['precio']:.2f}", stock))
 
+    # ---------- Frame Historial ----------
+    # Interfaz para visualizar el historial de ventas e ingresos
     def configurar_frame_historial(self):
         main_container = tk.Frame(self.frame_historial, bg=self.color_fondo, padx=20, pady=20)
         main_container.pack(fill="both", expand=True)
@@ -471,7 +484,7 @@ class CajaRegistradoraView:
                             bg=self.color_fondo, fg=self.color_texto)
         titulo.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        # Frame para filtros
+        # Frame para filtros de búsqueda por fecha
         frame_filtros = tk.Frame(main_container, bg=self.color_fondo, padx=15, pady=15,
                                 highlightbackground=self.color_texto, highlightthickness=1)
         frame_filtros.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
@@ -560,22 +573,12 @@ class CajaRegistradoraView:
             
         # Cargar historial en la tabla
         for registro in historial:
-            if registro["tipo"] == "venta":
-                for producto in registro["productos"]:
-                    self.tabla_historial.insert("", "end", values=(
-                        registro["codigo"],
-                        registro["fecha"],
-                        producto["producto"],
-                        producto["cantidad"],
-                        f"S/.{producto['precio']:.2f}",
-                        f"S/.{producto['subtotal']:.2f}"
-                    ))
-            else:  # tipo == "ingreso"
+            for producto in registro["productos"]:
                 self.tabla_historial.insert("", "end", values=(
                     registro["codigo"],
                     registro["fecha"],
-                    registro["producto"],
-                    f"+{registro['cantidad']}",  # Agregar + para indicar ingreso
-                    f"S/.{registro['precio']:.2f}",
-                    f"S/.{registro['precio'] * registro['cantidad']:.2f}"
+                    producto["producto"],
+                    producto["cantidad"],
+                    f"S/.{producto['precio_unitario']:.2f}",
+                    f"S/.{producto['subtotal']:.2f}"
                 ))
